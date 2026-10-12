@@ -110,3 +110,11 @@ def test_html_response_is_not_saved_as_audio(tmp_path):
     with pytest.raises(SourceError, match="audio"):
         download_audio(source, tmp_path / "audio", client, max_bytes=100_000)
     assert not list(Path(tmp_path).glob("audio*"))
+
+
+def test_binary_garbage_reports_invalid_audio(tmp_path):
+    client = client_for(lambda request: httpx.Response(200, content=b"not-an-audio-file", headers={"content-type": "application/octet-stream"}))
+    source = SourceInfo("https://example.com/episode", "https://example.com/episode", "episode")
+    with pytest.raises(SourceError, match="valid audio"):
+        download_audio(source, tmp_path / "audio", client, max_bytes=100_000)
+    assert not list(Path(tmp_path).glob("audio*"))

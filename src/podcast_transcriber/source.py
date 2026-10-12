@@ -110,7 +110,7 @@ def _audio_extension(path: Path) -> str:
             if not container.streams.audio:
                 raise SourceError("The download does not contain audio")
             container_name = container.format.name
-    except (av.AVError, ValueError, OSError) as exc:
+    except (av.error.FFmpegError, ValueError, OSError) as exc:
         if isinstance(exc, SourceError):
             raise
         raise SourceError("The download is not valid audio") from exc
