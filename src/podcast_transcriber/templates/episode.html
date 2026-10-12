@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ episode.title }} · Podcast Transcriber{% endblock %}
+{% block content %}
+  <nav class="back-nav"><a href="/">← Back to library</a></nav>
+  <section class="episode-heading">
+    <p class="eyebrow">EPISODE · {{ episode.created_at[:10] }}</p>
+    <h1>{{ episode.title }}</h1>
+    <div class="episode-actions">
+      {% if 'pocketcasts.com' in episode.source_url %}
+        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open in Pocket Casts ↗</a>
+      {% else %}
+        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open source ↗</a>
+      {% endif %}
+      {% if episode.stage == 'complete' %}
+        <a href="/episodes/{{ episode.id }}/transcript/ja">Download Japanese</a>
+        <a href="/episodes/{{ episode.id }}/transcript/en">Download English</a>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if episode.audio_filename %}
+    <section class="player-panel" aria-label="Episode audio">
+      <span class="player-label">AUDIO</span>
+      <audio id="episode-audio" controls preload="metadata" src="/episodes/{{ episode.id }}/audio"></audio>
+    </section>
+  {% endif %}
+
+  {% if episode.stage == 'failed' %}
+    <div class="notice error" role="alert">
+      <div><strong>Processing failed</strong><p>{{ episode.error }}</p>
+        <form action="/episodes/{{ episode.id }}/retry" method="post"><button class="retry-button" type="submit">Retry episode</button></form>
+      </div>
+    </div>
+  {% elif episode.stage != 'complete' %}
+    <div class="notice progress" id="job-status" data-status-url="/episodes/{{ episode.id }}/status" role="status">
+      <span class="pulse" aria-hidden="true"></span>
+      <div><strong>Processing episode</strong><p>Current step: <span id="stage-label">{{ episode.stage|capitalize }}</span>. You can leave this page and come back later.</p></div>
+    </div>
+  {% else %}
+    <div class="transcript-grid">
+      <section class="transcript-column" aria-labelledby="japanese-title">
+        <div class="transcript-head"><div><p class="eyebrow">ORIGINAL</p><h2 id="japanese-title">日本語</h2></div><span>{{ japanese|length }} passages</span></div>
+        {% for segment in japanese %}
+          <div class="transcript-segment"><button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button><p lang="ja">{{ segment.text }}</p></div>
+        {% endfor %}
+      </section>
+      <section class="transcript-column" aria-labelledby="english-title">
+        <div class="transcript-head"><div><p class="eyebrow">TRANSLATION</p><h2 id="english-title">English</h2></div><span>{{ english|length }} passages</span></div>
+        {% for segment in english %}
+          <div class="transcript-segment"><button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button><p>{{ segment.text }}</p></div>
+        {% endfor %}
+      </section>
+    </div>
+  {% endif %}
+{% endblock %}

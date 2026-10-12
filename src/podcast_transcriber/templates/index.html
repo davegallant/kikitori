@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Library · Podcast Transcriber{% endblock %}
+{% block content %}
+  <section class="hero">
+    <p class="eyebrow">LISTEN · READ · FIND</p>
+    <h1>Your podcast listening library.</h1>
+    <p class="intro">Paste a Pocket Casts episode page or a direct audio link. Japanese transcription and English translation run in the background.</p>
+    <form class="submit-form" action="/episodes" method="post">
+      <label for="episode-url">Episode URL</label>
+      <div class="input-row">
+        <input id="episode-url" name="url" type="url" placeholder="https://pocketcasts.com/podcast/…" autocomplete="url" required>
+        <button type="submit">Add episode <span aria-hidden="true">↗</span></button>
+      </div>
+      {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+    </form>
+  </section>
+
+  <section class="library" aria-labelledby="library-title">
+    <div class="section-head">
+      <div><p class="eyebrow">SAVED EPISODES</p><h2 id="library-title">Library</h2></div>
+      <form action="/" method="get" role="search">
+        <label class="sr-only" for="search">Search titles and transcripts</label>
+        <input id="search" name="q" type="search" placeholder="Search transcripts…" value="{{ query }}">
+      </form>
+    </div>
+    {% if episodes %}
+      <div class="episode-list">
+        {% for episode in episodes %}
+          <a class="episode-card" href="/episodes/{{ episode.id }}">
+            <span class="card-icon" aria-hidden="true">♫</span>
+            <span class="card-body"><strong>{{ episode.title }}</strong><small>{{ episode.created_at[:10] }} · {{ episode.stage|capitalize }}</small></span>
+            <span class="card-arrow" aria-hidden="true">↗</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <span aria-hidden="true">◎</span>
+        <h3>{% if query %}No matching episodes{% else %}Nothing saved yet{% endif %}</h3>
+        <p>{% if query %}Try a different title or phrase.{% else %}Add an episode above to start your library.{% endif %}</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
