@@ -7,6 +7,7 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+from itertools import zip_longest
 from threading import Lock
 from urllib.parse import urlsplit
 
@@ -113,16 +114,18 @@ def create_app(data_dir: Path, worker: TranscriptionWorker | None = None) -> Fas
         episode = required_episode(episode_id)
         japanese = []
         english = []
+        transcript_pairs = []
         if episode.stage == "complete":
             for filename, target in ((episode.ja_json_filename, japanese), (episode.en_json_filename, english)):
                 if filename:
                     path = store.artifact_path(episode_id, filename)
                     if path.is_file():
                         target.extend(json.loads(path.read_text(encoding="utf-8")))
+            transcript_pairs = list(zip_longest(japanese, english))
         return templates.TemplateResponse(
             request,
             "episode.html",
-            {"episode": episode, "japanese": japanese, "english": english},
+            {"episode": episode, "japanese": japanese, "english": english, "transcript_pairs": transcript_pairs},
         )
 
     @app.get("/episodes/{episode_id}/status")

@@ -37,19 +37,20 @@
       <div><strong>Processing episode</strong><p>Current step: <span id="stage-label">{{ episode.stage|capitalize }}</span>. You can leave this page and come back later.</p></div>
     </div>
   {% else %}
-    <div class="transcript-grid">
-      <section class="transcript-column" aria-labelledby="japanese-title">
-        <div class="transcript-head"><div><p class="eyebrow">ORIGINAL</p><h2 id="japanese-title">日本語</h2></div><span>{{ japanese|length }} passages</span></div>
-        {% for segment in japanese %}
-          <div class="transcript-segment"><button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button><p lang="ja">{{ segment.text }}</p></div>
+    <section class="transcript-column" aria-label="Japanese transcript with English translation">
+      <div class="transcript-head"><div><p class="eyebrow">JAPANESE · ENGLISH</p><h2>Transcript</h2></div><span>{{ japanese|length }} passages</span></div>
+      <div class="transcript-pairs">
+        {% for ja, en in transcript_pairs %}
+          <div class="transcript-pair">
+            {% set segment = ja or en %}
+            <button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button>
+            <div class="transcript-texts">
+              {% if ja %}<p lang="ja">{{ ja.text }}</p>{% endif %}
+              {% if en %}<p class="translation">{{ en.text }}</p>{% endif %}
+            </div>
+          </div>
         {% endfor %}
-      </section>
-      <section class="transcript-column" aria-labelledby="english-title">
-        <div class="transcript-head"><div><p class="eyebrow">TRANSLATION</p><h2 id="english-title">English</h2></div><span>{{ english|length }} passages</span></div>
-        {% for segment in english %}
-          <div class="transcript-segment"><button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button><p>{{ segment.text }}</p></div>
-        {% endfor %}
-      </section>
-    </div>
+      </div>
+    </section>
   {% endif %}
 {% endblock %}
