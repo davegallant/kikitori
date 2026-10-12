@@ -4,15 +4,15 @@ A local web library for Japanese podcast episodes. Paste a Pocket Casts episode 
 
 ## Start
 
-On a machine with Nix flakes enabled, run from this directory:
+On a machine with Nix flakes and `just` installed, run from this directory:
 
 ```sh
-nix develop --command uv run podcast-transcriber
+just dev
 ```
 
 Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The first transcription downloads the `faster-whisper` small model, then processes the episode on CPU. A 27-minute episode can take several minutes because Japanese transcription and English translation are separate passes. The page shows the current stage and updates when processing finishes.
 
-The app binds only to `127.0.0.1` by default. Use `--port 9000` to choose another port, or `--data-dir /path/to/library` to move the library. By default, audio and transcripts are stored in `./data/`, one directory per episode. Keep that directory to preserve the library across restarts.
+The app binds only to `127.0.0.1` by default. Use `just dev 9000` to choose another port. To move the library, run `nix develop --command uv run podcast-transcriber --data-dir /path/to/library`. By default, audio and transcripts are stored in `./data/`, one directory per episode. Keep that directory to preserve the library across restarts.
 
 ## Supported links
 
