@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from podcast_transcriber.source import SourceError, SourceInfo, download_audio, resolve_source
+from podcast_transcriber.source import SourceError, SourceInfo, download_audio, resolve_source, safe_http_client
 
 
 POCKET_URL = (
@@ -116,5 +116,40 @@ def test_binary_garbage_reports_invalid_audio(tmp_path):
     client = client_for(lambda request: httpx.Response(200, content=b"not-an-audio-file", headers={"content-type": "application/octet-stream"}))
     source = SourceInfo("https://example.com/episode", "https://example.com/episode", "episode")
     with pytest.raises(SourceError, match="valid audio"):
+        download_audio(source, tmp_path / "audio", client, max_bytes=100_000)
+    assert not list(Path(tmp_path).glob("audio*"))
+
+
+def test_dns_rebinding_cannot_reach_private_address(monkeypatch, tmp_path):
+    lookups = []
+    connections = []
+    original = socket.getaddrinfo
+
+    def changing_dns(host, port, *args, **kwargs):
+        if host == "rebind.example":
+            lookups.append(host)
+            address = "93.184.215.14" if len(lookups) == 1 else "127.0.0.1"
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port))]
+        return original(host, port, *args, **kwargs)
+
+    def record_connection(address, *args, **kwargs):
+        connections.append(address)
+        raise AssertionError("connection must not be attempted")
+
+    monkeypatch.setattr(socket, "getaddrinfo", changing_dns)
+    monkeypatch.setattr(socket, "create_connection", record_connection)
+    source = SourceInfo("http://rebind.example/audio", "http://rebind.example/audio", "episode")
+    with safe_http_client() as client:
+        with pytest.raises(SourceError, match="private|local"):
+            download_audio(source, tmp_path / "audio", client, max_bytes=100_000)
+    assert len(lookups) >= 2
+    assert connections == []
+
+
+def test_audio_header_without_decodable_frames_is_rejected(tmp_path):
+    header_only = wav_bytes()[:44]
+    client = client_for(lambda request: httpx.Response(200, content=header_only, headers={"content-type": "audio/wav"}))
+    source = SourceInfo("https://example.com/episode.wav", "https://example.com/episode.wav", "episode")
+    with pytest.raises(SourceError, match="decodable audio"):
         download_audio(source, tmp_path / "audio", client, max_bytes=100_000)
     assert not list(Path(tmp_path).glob("audio*"))

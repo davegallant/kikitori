@@ -7,6 +7,7 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+from threading import Lock
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -57,6 +58,7 @@ def _clock(seconds: float) -> str:
 def create_app(data_dir: Path, worker: TranscriptionWorker | None = None) -> FastAPI:
     store = EpisodeStore(data_dir)
     worker = worker or TranscriptionWorker(store)
+    submission_lock = Lock()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -90,13 +92,14 @@ def create_app(data_dir: Path, worker: TranscriptionWorker | None = None) -> Fas
         except ValueError as exc:
             return render_index(request, error=str(exc), status_code=422)
         source_id = _source_id(url)
-        existing = store.find_duplicate(url, source_id)
-        if existing:
-            return RedirectResponse(f"/episodes/{existing.id}", status_code=303)
-        episode = store.create(url)
-        if source_id:
-            store.update(episode.id, source_id=source_id)
-        worker.submit(episode.id)
+        with submission_lock:
+            existing = store.find_duplicate(url, source_id)
+            if existing:
+                return RedirectResponse(f"/episodes/{existing.id}", status_code=303)
+            episode = store.create(url)
+            if source_id:
+                store.update(episode.id, source_id=source_id)
+            worker.submit(episode.id)
         return RedirectResponse(f"/episodes/{episode.id}", status_code=303)
 
     def required_episode(episode_id: str):

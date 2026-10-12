@@ -1,4 +1,6 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, BrokenBarrierError
 
 from fastapi.testclient import TestClient
 
@@ -115,3 +117,29 @@ def test_failed_episode_can_be_retried_manually(tmp_path):
     assert store.get(episode.id).stage == "queued"
     assert store.get(episode.id).error is None
     assert worker.submitted == [episode.id]
+
+
+def test_concurrent_submissions_create_only_one_episode(tmp_path, monkeypatch):
+    original = EpisodeStore.find_duplicate
+    barrier = Barrier(2)
+
+    def slow_lookup(self, url, source_id=None):
+        result = original(self, url, source_id)
+        if result is None:
+            try:
+                barrier.wait(timeout=0.3)
+            except BrokenBarrierError:
+                pass
+        return result
+
+    monkeypatch.setattr(EpisodeStore, "find_duplicate", slow_lookup)
+    worker = RecordingWorker()
+    with TestClient(create_app(tmp_path, worker)) as client:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            responses = list(pool.map(
+                lambda _: client.post("/episodes", data={"url": "https://example.com/episode.mp3"}, follow_redirects=False),
+                range(2),
+            ))
+    assert responses[0].headers["location"] == responses[1].headers["location"]
+    assert len(EpisodeStore(tmp_path).list()) == 1
+    assert len(worker.submitted) == 1

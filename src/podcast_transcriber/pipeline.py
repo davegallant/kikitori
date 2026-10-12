@@ -7,9 +7,7 @@ from threading import Lock, Thread
 from typing import Callable
 from uuid import uuid4
 
-import httpx
-
-from .source import download_audio, resolve_source
+from .source import download_audio, resolve_source, safe_http_client
 from .store import EpisodeStore
 
 
@@ -126,7 +124,7 @@ class TranscriptionWorker:
                     audio_path = candidate
             if audio_path is None:
                 self.store.update(episode_id, stage="resolving", error=None)
-                with httpx.Client(timeout=httpx.Timeout(30, read=120), follow_redirects=False) as client:
+                with safe_http_client() as client:
                     source = self.resolver(episode.submitted_url, client)
                     self.store.update(
                         episode_id,

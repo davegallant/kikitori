@@ -9,6 +9,7 @@ import socket
 from urllib.parse import unquote, urljoin, urlsplit
 
 import av
+import httpcore
 import httpx
 
 
@@ -29,6 +30,37 @@ POCKET_PATH = re.compile(
     re.IGNORECASE,
 )
 REDIRECT_CODES = {301, 302, 303, 307, 308}
+
+
+class _PublicNetworkBackend(httpcore.SyncBackend):
+    def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        try:
+            addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        except OSError as exc:
+            raise SourceError(f"Could not resolve host: {host}") from exc
+        candidates = [ipaddress.ip_address(item[4][0]) for item in addresses]
+        if not candidates or any(not address.is_global for address in candidates):
+            raise SourceError("Local or private network URLs are not supported")
+        # Connect to the checked IP. HTTPX keeps the original host for HTTP Host and TLS SNI.
+        return super().connect_tcp(
+            str(candidates[0]), port, timeout=timeout,
+            local_address=local_address, socket_options=socket_options,
+        )
+
+
+class _PublicAddressTransport(httpx.HTTPTransport):
+    def __init__(self):
+        super().__init__(trust_env=False)
+        # HTTPX does not expose network_backend; pin its locked HTTP Core version.
+        self._pool._network_backend = _PublicNetworkBackend()
+
+
+def safe_http_client() -> httpx.Client:
+    """Create a client for untrusted episode URLs."""
+    return httpx.Client(
+        transport=_PublicAddressTransport(), trust_env=False,
+        follow_redirects=False, timeout=httpx.Timeout(30, read=120),
+    )
 
 
 def _validate_public_url(url: str) -> None:
@@ -110,6 +142,11 @@ def _audio_extension(path: Path) -> str:
             if not container.streams.audio:
                 raise SourceError("The download does not contain audio")
             container_name = container.format.name
+            has_frames = False
+            for frame in container.decode(audio=0):
+                has_frames = has_frames or frame.samples > 0
+            if not has_frames:
+                raise SourceError("The download does not contain decodable audio")
     except (av.error.FFmpegError, ValueError, OSError) as exc:
         if isinstance(exc, SourceError):
             raise

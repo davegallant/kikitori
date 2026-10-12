@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -592,6 +592,7 @@ dependencies = [
     { name = "av" },
     { name = "fastapi" },
     { name = "faster-whisper" },
+    { name = "httpcore" },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "python-multipart" },
@@ -608,6 +609,7 @@ requires-dist = [
     { name = "av", specifier = ">=15,<16" },
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "faster-whisper", specifier = ">=1.2,<2" },
+    { name = "httpcore", specifier = ">=1.0.9,<1.1" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "jinja2", specifier = ">=3.1,<4" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8,<10" },
