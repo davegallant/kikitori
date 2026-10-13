@@ -64,7 +64,7 @@ a { color: inherit; }
 .transcript-head { display: flex; justify-content: space-between; align-items: end; gap: 10px; border-bottom: 1px solid #e6ece5; padding-bottom: 18px; margin-bottom: 5px; }
 .transcript-head .eyebrow { margin-bottom: 8px; }
 .transcript-head span { font-size: 11px; color: #839088; white-space: nowrap; }
-.transcript-pairs { padding-bottom: 80px; }
+.transcript-pairs { max-height: max(180px, calc(100vh - 400px)); overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px 0; }
 .transcript-pair { display: grid; grid-template-columns: 58px 1fr; gap: 14px; padding: 15px 0; border-bottom: 1px solid #f0f2ed; }
 .transcript-pair:last-child { border-bottom: 0; }
 .transcript-texts { min-width: 0; }
