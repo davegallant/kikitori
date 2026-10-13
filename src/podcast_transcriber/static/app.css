@@ -49,8 +49,8 @@ a { color: inherit; }
 .episode-actions { display: flex; gap: 18px; flex-wrap: wrap; margin: 25px 0 35px; }
 .episode-actions a { color: #276f56; text-decoration: none; font-size: 13px; font-weight: 700; }
 .episode-actions a:hover { text-decoration: underline; }
-.player-panel { position: sticky; top: 12px; z-index: 10; background: #173f34; color: #fff; border-radius: 15px; padding: 21px 24px; display: flex; align-items: center; gap: 26px; margin-bottom: 34px; }
-.player-panel.is-stuck { display: block; padding: 12px 18px; }
+.player-panel { position: sticky; top: 0; z-index: 10; background: #173f34; color: #fff; border-radius: 15px; padding: 21px 24px; display: flex; align-items: center; gap: 26px; margin-bottom: 34px; }
+.player-panel.is-stuck { display: block; width: 100vw; margin-left: calc(50% - 50vw); border-radius: 0; padding: 20px max(14px, calc((100vw - 1100px) / 2)); }
 .player-label { font-size: 10px; font-weight: 800; letter-spacing: .18em; opacity: .7; }
 .player-title { display: none; }
 .player-panel.is-stuck .player-label { display: none; }

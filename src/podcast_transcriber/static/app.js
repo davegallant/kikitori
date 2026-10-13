@@ -10,7 +10,7 @@ const playerPanel = document.querySelector(".player-panel");
 if (playerPanel) {
   const updateStickyTitle = () => {
     const bounds = playerPanel.getBoundingClientRect();
-    playerPanel.classList.toggle("is-stuck", bounds.top <= 12 && bounds.bottom > 12);
+    playerPanel.classList.toggle("is-stuck", bounds.top <= 0 && bounds.bottom > 0);
   };
   window.addEventListener("scroll", updateStickyTitle, { passive: true });
   updateStickyTitle();
