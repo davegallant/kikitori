@@ -6,6 +6,16 @@ document.addEventListener("click", (event) => {
   audio.play();
 });
 
+const playerPanel = document.querySelector(".player-panel");
+if (playerPanel) {
+  const updateStickyTitle = () => {
+    const bounds = playerPanel.getBoundingClientRect();
+    playerPanel.classList.toggle("is-stuck", bounds.top <= 12 && bounds.bottom > 12);
+  };
+  window.addEventListener("scroll", updateStickyTitle, { passive: true });
+  updateStickyTitle();
+}
+
 const statusBox = document.getElementById("job-status");
 if (statusBox) {
   const poll = async () => {

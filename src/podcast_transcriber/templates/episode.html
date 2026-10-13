@@ -21,6 +21,7 @@
   {% if episode.audio_filename %}
     <section class="player-panel" aria-label="Episode audio">
       <span class="player-label">AUDIO</span>
+      <span class="player-title">{{ episode.title }}</span>
       <audio id="episode-audio" controls preload="metadata" src="/episodes/{{ episode.id }}/audio"></audio>
     </section>
   {% endif %}
