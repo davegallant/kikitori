@@ -143,3 +143,32 @@ def test_concurrent_submissions_create_only_one_episode(tmp_path, monkeypatch):
     assert responses[0].headers["location"] == responses[1].headers["location"]
     assert len(EpisodeStore(tmp_path).list()) == 1
     assert len(worker.submitted) == 1
+
+
+def test_rebuild_translation_reuses_saved_japanese_and_queues_once(tmp_path):
+    store = EpisodeStore(tmp_path)
+    episode = store.create("https://example.com/episode.mp3")
+    store.artifact_path(episode.id, "transcript_ja.json").write_text("[]")
+    store.update(episode.id, stage="complete", ja_json_filename="transcript_ja.json")
+    worker = RecordingWorker()
+    with TestClient(create_app(tmp_path, worker)) as client:
+        page = client.get(f"/episodes/{episode.id}")
+        assert "Rebuild English translation" in page.text
+        rebuilt = client.post(f"/episodes/{episode.id}/retranslate", follow_redirects=False)
+        duplicate = client.post(f"/episodes/{episode.id}/retranslate", follow_redirects=False)
+    assert rebuilt.status_code == 303
+    assert duplicate.status_code == 409
+    assert worker.submitted == [episode.id]
+    assert store.get(episode.id).stage == "queued"
+    assert store.get(episode.id).ja_json_filename == "transcript_ja.json"
+
+
+def test_rebuild_translation_requires_saved_japanese(tmp_path):
+    store = EpisodeStore(tmp_path)
+    episode = store.create("https://example.com/episode.mp3")
+    store.update(episode.id, stage="complete", ja_json_filename="transcript_ja.json")
+    worker = RecordingWorker()
+    with TestClient(create_app(tmp_path, worker)) as client:
+        response = client.post(f"/episodes/{episode.id}/retranslate")
+    assert response.status_code == 409
+    assert worker.submitted == []

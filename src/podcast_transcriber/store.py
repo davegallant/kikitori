@@ -28,6 +28,7 @@ class Episode:
     en_json_filename: str | None
     ja_text_filename: str | None
     en_text_filename: str | None
+    translation_method: str | None = None
 
 
 class EpisodeStore:

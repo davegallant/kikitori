@@ -37,6 +37,7 @@ def make_worker(store, model, **options):
         model_factory=lambda: model,
         resolver=options.get("resolver", fake_resolve),
         downloader=options.get("downloader", fake_download),
+        translator_factory=lambda: options.get("translator", lambda text: "Japanese companies."),
     )
 
 
@@ -68,7 +69,6 @@ def test_pipeline_writes_bilingual_artifacts_and_word_timestamps(tmp_path):
     assert "Japanese companies." in store.artifact_path(episode.id, saved.en_text_filename).read_text()
     assert model.calls == [
         {"language": "ja", "word_timestamps": True, "task": "transcribe"},
-        {"language": "ja", "task": "translate"},
     ]
 
 
@@ -113,3 +113,48 @@ def test_failed_jobs_are_not_automatically_retried_on_restart(tmp_path):
     worker = make_worker(store, FakeModel())
     worker.recover()
     assert worker.pending_count == 0
+
+
+def test_translation_failure_preserves_japanese_for_retry(tmp_path):
+    store = EpisodeStore(tmp_path)
+    episode = store.create("https://example.com/episode")
+    model = FakeModel()
+
+    def fail_translation(text):
+        raise RuntimeError("Translation unavailable")
+
+    make_worker(store, model, translator=fail_translation).process(episode.id)
+    failed = store.get(episode.id)
+    assert failed.stage == "failed"
+    assert failed.ja_json_filename
+    original = store.artifact_path(episode.id, failed.ja_json_filename).read_bytes()
+    make_worker(store, model).process(episode.id)
+    saved = store.get(episode.id)
+    assert saved.stage == "complete"
+    assert len(model.calls) == 1
+    assert store.artifact_path(episode.id, saved.ja_json_filename).read_bytes() == original
+
+
+def test_saved_japanese_is_translated_passage_by_passage_without_audio(tmp_path):
+    store = EpisodeStore(tmp_path)
+    episode = store.create("https://example.com/episode")
+    japanese = [
+        {"start": 0.0, "end": 3.1, "text": "こんにちは。", "words": []},
+        {"start": 3.1, "end": 9.0, "text": "今日は雨です。", "words": []},
+    ]
+    store.artifact_path(episode.id, "transcript_ja.json").write_text(json.dumps(japanese))
+    store.update(episode.id, ja_json_filename="transcript_ja.json")
+    model = FakeModel()
+    translations = {"こんにちは。": "Hello.", "今日は雨です。": "It is raining today."}
+    def no_download(*args):
+        raise AssertionError("Translation must reuse saved Japanese")
+    make_worker(store, model, resolver=no_download, translator=translations.__getitem__).process(episode.id)
+    saved = store.get(episode.id)
+    assert saved.stage == "complete"
+    assert model.calls == []
+    english = json.loads(store.artifact_path(episode.id, saved.en_json_filename).read_text())
+    assert english == [
+        {"start": segment["start"], "end": segment["end"], "text": translations[segment["text"]]}
+        for segment in japanese
+    ]
+    assert saved.translation_method == "opus-mt-ja-en-v1"

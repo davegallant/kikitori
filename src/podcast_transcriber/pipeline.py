@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from .source import download_audio, resolve_source, safe_http_client
 from .store import EpisodeStore
+from .translation import LocalTranslator, TRANSLATION_METHOD
 
 
 def _default_model():
@@ -52,6 +53,7 @@ class TranscriptionWorker:
         resolver: Callable = resolve_source,
         downloader: Callable = download_audio,
         max_bytes: int = 500_000_000,
+        translator_factory: Callable = LocalTranslator,
     ):
         self.store = store
         self.model_factory = model_factory
@@ -59,6 +61,8 @@ class TranscriptionWorker:
         self.downloader = downloader
         self.max_bytes = max_bytes
         self._model = None
+        self.translator_factory = translator_factory
+        self._translator = None
         self._queue: Queue[str | None] = Queue()
         self._pending: set[str] = set()
         self._lock = Lock()
@@ -117,45 +121,60 @@ class TranscriptionWorker:
         if episode is None:
             return
         try:
-            audio_path = None
-            if episode.audio_filename:
-                candidate = self.store.artifact_path(episode_id, episode.audio_filename)
-                if candidate.is_file():
-                    audio_path = candidate
-            if audio_path is None:
-                self.store.update(episode_id, stage="resolving", error=None)
-                with safe_http_client() as client:
-                    source = self.resolver(episode.submitted_url, client)
-                    self.store.update(
-                        episode_id,
-                        title=source.title,
-                        source_url=source.source_url,
-                        audio_url=source.audio_url,
-                        source_id=source.source_id,
-                        stage="downloading",
-                    )
-                    audio_path = self.downloader(
-                        source,
-                        self.store.artifact_path(episode_id, "audio"),
-                        client,
-                        max_bytes=self.max_bytes,
-                    )
-                self.store.update(episode_id, audio_filename=audio_path.name)
+            ja_path = (self.store.artifact_path(episode_id, episode.ja_json_filename)
+                       if episode.ja_json_filename else None)
+            if ja_path and ja_path.is_file():
+                ja_data = json.loads(ja_path.read_text(encoding="utf-8"))
+            else:
+                audio_path = None
+                if episode.audio_filename:
+                    candidate = self.store.artifact_path(episode_id, episode.audio_filename)
+                    if candidate.is_file():
+                        audio_path = candidate
+                if audio_path is None:
+                    self.store.update(episode_id, stage="resolving", error=None)
+                    with safe_http_client() as client:
+                        source = self.resolver(episode.submitted_url, client)
+                        self.store.update(
+                            episode_id,
+                            title=source.title,
+                            source_url=source.source_url,
+                            audio_url=source.audio_url,
+                            source_id=source.source_id,
+                            stage="downloading",
+                        )
+                        audio_path = self.downloader(
+                            source,
+                            self.store.artifact_path(episode_id, "audio"),
+                            client,
+                            max_bytes=self.max_bytes,
+                        )
+                    self.store.update(episode_id, audio_filename=audio_path.name)
 
-            self.store.update(episode_id, stage="transcribing", error=None)
-            model = self._model_instance()
-            japanese, _ = model.transcribe(
-                str(audio_path), language="ja", word_timestamps=True, task="transcribe"
-            )
-            ja_data = _serialize_segments(japanese, include_words=True)
+                self.store.update(episode_id, stage="transcribing", error=None)
+                model = self._model_instance()
+                japanese, _ = model.transcribe(
+                    str(audio_path), language="ja", word_timestamps=True, task="transcribe"
+                )
+                ja_data = _serialize_segments(japanese, include_words=True)
+                _write_atomic(self.store.artifact_path(episode_id, "transcript_ja.json"),
+                              json.dumps(ja_data, ensure_ascii=False, indent=2) + "\n")
+                self.store.update(episode_id, ja_json_filename="transcript_ja.json")
+            _write_atomic(self.store.artifact_path(episode_id, "transcript_ja.txt"),
+                          "".join(f"[{_timestamp(item['start'])}] {item['text']}\n" for item in ja_data))
+            self.store.update(episode_id, ja_text_filename="transcript_ja.txt")
             self.store.update(episode_id, stage="translating")
-            english, _ = model.transcribe(str(audio_path), language="ja", task="translate")
-            en_data = _serialize_segments(english, include_words=False)
+            if self._translator is None:
+                self._translator = self.translator_factory()
+            en_data = []
+            for segment in ja_data:
+                text = self._translator(segment["text"]).strip() if segment["text"].strip() else ""
+                if segment["text"].strip() and not text:
+                    raise ValueError("Translation returned an empty passage")
+                en_data.append({"start": segment["start"], "end": segment["end"], "text": text})
 
             artifacts = {
-                "ja_json_filename": ("transcript_ja.json", json.dumps(ja_data, ensure_ascii=False, indent=2) + "\n"),
                 "en_json_filename": ("transcript_en.json", json.dumps(en_data, ensure_ascii=False, indent=2) + "\n"),
-                "ja_text_filename": ("transcript_ja.txt", "".join(f"[{_timestamp(item['start'])}] {item['text']}\n" for item in ja_data)),
                 "en_text_filename": ("transcript_en.txt", "".join(f"[{_timestamp(item['start'])}] {item['text']}\n" for item in en_data)),
             }
             for filename, content in artifacts.values():
@@ -164,6 +183,7 @@ class TranscriptionWorker:
                 episode_id,
                 stage="complete",
                 error=None,
+                translation_method=TRANSLATION_METHOD,
                 **{field: filename for field, (filename, _) in artifacts.items()},
             )
         except Exception as exc:

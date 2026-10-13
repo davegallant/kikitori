@@ -88,3 +88,7 @@ a { color: inherit; }
   .player-panel audio { margin-top: 10px; }
   .local-badge { display: none; }
 }
+
+.action-button { border: 0; background: none; padding: 0; color: #276f56; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.action-button:hover { text-decoration: underline; }
+.translation-note { color: #65736e; font-size: 14px; line-height: 1.6; }

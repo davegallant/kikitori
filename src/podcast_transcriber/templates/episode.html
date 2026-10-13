@@ -14,6 +14,9 @@
       {% if episode.stage == 'complete' %}
         <a href="/episodes/{{ episode.id }}/transcript/ja">Download Japanese</a>
         <a href="/episodes/{{ episode.id }}/transcript/en">Download English</a>
+        {% if episode.ja_json_filename %}
+          <form action="/episodes/{{ episode.id }}/retranslate" method="post"><button class="action-button" type="submit">Rebuild English translation</button></form>
+        {% endif %}
       {% endif %}
     </div>
   </section>
@@ -38,6 +41,9 @@
       <div><strong>Processing episode</strong><p>Current step: <span id="stage-label">{{ episode.stage|capitalize }}</span>. You can leave this page and come back later.</p></div>
     </div>
   {% else %}
+    {% if not episode.translation_method %}
+      <p class="translation-note">This episode uses an older English translation that may not line up. Rebuild English translation to align it with each Japanese passage.</p>
+    {% endif %}
     <section class="transcript-column" aria-label="Japanese transcript with English translation">
       <div class="transcript-head"><div><p class="eyebrow">JAPANESE · ENGLISH</p><h2>Transcript</h2></div><span>{{ japanese|length }} passages</span></div>
       <div class="transcript-pairs">

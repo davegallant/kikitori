@@ -142,6 +142,19 @@ def create_app(data_dir: Path, worker: TranscriptionWorker | None = None) -> Fas
         worker.submit(episode_id)
         return RedirectResponse(f"/episodes/{episode_id}", status_code=303)
 
+    @app.post("/episodes/{episode_id}/retranslate")
+    def retranslate(episode_id: str):
+        with submission_lock:
+            episode = required_episode(episode_id)
+            if episode.stage != "complete":
+                raise HTTPException(409, "Only completed episodes can be retranslated")
+            if (not episode.ja_json_filename or not
+                    store.artifact_path(episode_id, episode.ja_json_filename).is_file()):
+                raise HTTPException(409, "Saved Japanese transcript is required")
+            store.update(episode_id, stage="queued", error=None)
+            worker.submit(episode_id)
+        return RedirectResponse(f"/episodes/{episode_id}", status_code=303)
+
     @app.get("/episodes/{episode_id}/audio")
     def audio(episode_id: str):
         episode = required_episode(episode_id)
