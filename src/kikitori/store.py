@@ -1,5 +1,7 @@
 """Filesystem episode records and simple library search."""
 
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 import json
@@ -102,6 +104,40 @@ class EpisodeStore:
                     continue
             matches.append(episode)
         return sorted(matches, key=lambda episode: episode.created_at, reverse=True)
+
+    def matching_passages(self, episode: Episode, query: str, limit: int = 3) -> list[dict]:
+        search = query.strip().casefold()
+        if not search or limit <= 0:
+            return []
+
+        matches = []
+        for language, filename in (
+            ("Japanese", episode.ja_json_filename),
+            ("English", episode.en_json_filename),
+        ):
+            if not filename:
+                continue
+            path = self.artifact_path(episode.id, filename)
+            if not path.is_file():
+                continue
+            try:
+                passages = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(passages, list):
+                continue
+            for passage in passages:
+                if not isinstance(passage, dict):
+                    continue
+                text = passage.get("text")
+                if isinstance(text, str) and search in text.casefold():
+                    matches.append({
+                        "language": language,
+                        "start": passage.get("start", 0),
+                        "text": text,
+                    })
+        matches.sort(key=lambda passage: float(passage["start"]))
+        return matches[:limit]
 
     def update(self, episode_id: str, **fields) -> Episode:
         episode = self.get(episode_id)

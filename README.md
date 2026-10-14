@@ -4,9 +4,10 @@
   <img src="src/kikitori/static/kikitori-cat.svg" alt="Cute cat wearing headphones" width="320">
 </p>
 
+A local web library for Japanese podcast episodes. Paste a Pocket Casts episode page or a direct audio URL, then listen and read timestamped Japanese and English transcripts.
+
 ![Kikitori episode page](docs/images/kikitori-episode.png)
 
-A local web library for Japanese podcast episodes. Paste a Pocket Casts episode page or a direct audio URL, then listen and read timestamped Japanese and English transcripts.
 
 ## Start
 
@@ -25,8 +26,6 @@ The app binds only to `127.0.0.1` by default. Use `just dev 9000` to choose anot
 - Full public Pocket Casts episode pages, such as `https://pocketcasts.com/podcast/.../.../.../...`.
 - Apple Podcasts episode links with an episode ID, such as `https://podcasts.apple.com/us/podcast/show/id123456?i=789012`. Episodes must have public publisher audio.
 - Direct public HTTP(S) audio URLs, including redirects from podcast hosts.
-
-Pocket Casts [does not offer a public API](https://support.pocketcasts.com/knowledge-base/pocket-casts-api/). This app uses a currently available episode lookup to resolve a Pocket Casts page to its original audio URL. If Pocket Casts changes that lookup or an older episode is not returned, use the direct audio URL instead. Private feeds and arbitrary podcast page sites are not supported yet.
 
 ## Files and search
 

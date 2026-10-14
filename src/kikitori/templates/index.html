@@ -3,7 +3,7 @@
 {% block content %}
   <section class="hero">
     <img class="hero-cat" src="{{ url_for('static', path='/kikitori-cat.svg') }}" alt="Cat wearing headphones" width="180" height="180">
-    <p class="intro">Paste a Pocket Casts or Apple Podcasts episode page, or a direct audio link. Japanese transcription and English translation run in the background.</p>
+    <p class="intro">Paste in a podcast url (Apple Podcasts, Pocket Casts  or a direct audio link). Afterwards, a Japanese transcription and English translation will be created.</p>
     <form class="submit-form" action="/episodes" method="post">
       <label for="episode-url">Episode URL</label>
       <div class="input-row">
@@ -25,11 +25,21 @@
     {% if episodes %}
       <div class="episode-list">
         {% for episode in episodes %}
-          <a class="episode-card" href="/episodes/{{ episode.id }}">
-            <span class="card-icon" aria-hidden="true">♫</span>
-            <span class="card-body"><strong>{{ episode.title }}</strong><small>{{ episode.created_at[:10] }} · {{ episode.stage|capitalize }}</small></span>
-            <span class="card-arrow" aria-hidden="true">↗</span>
-          </a>
+          <div class="episode-result">
+            <a class="episode-card" href="/episodes/{{ episode.id }}">
+              <span class="card-icon" aria-hidden="true">♫</span>
+              <span class="card-body"><strong>{{ episode.title }}</strong><small>{{ episode.created_at[:10] }} · {{ episode.stage|capitalize }}</small></span>
+              <span class="card-arrow" aria-hidden="true">↗</span>
+            </a>
+            {% set passages = matches.get(episode.id, []) %}
+            {% if passages %}
+              <ul class="search-matches" aria-label="Matching transcript passages">
+                {% for passage in passages %}
+                  <li><a href="/episodes/{{ episode.id }}?t={{ passage.start }}#episode-audio"><span>{{ passage.language }} · {{ passage.start|clock }}</span>{{ passage.text }}</a></li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
         {% endfor %}
       </div>
     {% else %}

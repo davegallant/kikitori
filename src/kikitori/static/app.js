@@ -6,6 +6,16 @@ document.addEventListener("click", (event) => {
   audio.play();
 });
 
+const episodeAudio = document.getElementById("episode-audio");
+const requestedTime = new URLSearchParams(window.location.search).get("t");
+if (episodeAudio && requestedTime !== null && Number.isFinite(Number(requestedTime)) && Number(requestedTime) >= 0) {
+  const seekToRequestedTime = () => {
+    episodeAudio.currentTime = Number(requestedTime);
+  };
+  if (episodeAudio.readyState >= 1) seekToRequestedTime();
+  else episodeAudio.addEventListener("loadedmetadata", seekToRequestedTime, { once: true });
+}
+
 const playerPanel = document.querySelector(".player-panel");
 if (playerPanel) {
   const updateStickyTitle = () => {

@@ -58,6 +58,35 @@ def test_library_search_finds_saved_transcript_text(tmp_path):
     assert "Japanese work" not in missing.text
 
 
+def test_library_search_shows_first_three_matching_passages_with_timestamps(tmp_path):
+    store = EpisodeStore(tmp_path)
+    episode = store.create("https://example.com/episode.mp3")
+    segments = [
+        {"start": second, "text": f"Rare phrase in passage {second}"}
+        for second in range(1, 5)
+    ]
+    store.update(
+        episode.id,
+        title="Episode with matches",
+        stage="complete",
+        en_json_filename="transcript_en.json",
+        en_text_filename="transcript_en.txt",
+    )
+    store.artifact_path(episode.id, "transcript_en.json").write_text(json.dumps(segments), encoding="utf-8")
+    store.artifact_path(episode.id, "transcript_en.txt").write_text(
+        "\n".join(segment["text"] for segment in segments), encoding="utf-8"
+    )
+
+    with TestClient(create_app(tmp_path, RecordingWorker())) as client:
+        response = client.get("/?q=RARE")
+
+    assert "Rare phrase in passage 1" in response.text
+    assert "Rare phrase in passage 2" in response.text
+    assert "Rare phrase in passage 3" in response.text
+    assert "Rare phrase in passage 4" not in response.text
+    assert f'href="/episodes/{episode.id}?t=1#episode-audio"' in response.text
+
+
 def test_episode_page_has_source_link_player_and_transcripts(tmp_path):
     store = EpisodeStore(tmp_path)
     source_url = "https://pocketcasts.com/podcast/show/podcast-id/episode/episode-id"

@@ -91,10 +91,19 @@ def create_app(data_dir: Path, worker: TranscriptionWorker | None = None) -> Fas
     templates.env.filters["clock"] = _clock
 
     def render_index(request: Request, query: str = "", error: str | None = None, status_code: int = 200):
+        episodes = store.list(query)
         return templates.TemplateResponse(
             request,
             "index.html",
-            {"episodes": store.list(query), "query": query, "error": error},
+            {
+                "episodes": episodes,
+                "matches": {
+                    episode.id: store.matching_passages(episode, query)
+                    for episode in episodes
+                },
+                "query": query,
+                "error": error,
+            },
             status_code=status_code,
         )
 
