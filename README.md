@@ -19,6 +19,7 @@ The app binds only to `127.0.0.1` by default. Use `just dev 9000` to choose anot
 ## Supported links
 
 - Full public Pocket Casts episode pages, such as `https://pocketcasts.com/podcast/.../.../.../...`.
+- Apple Podcasts episode links with an episode ID, such as `https://podcasts.apple.com/us/podcast/show/id123456?i=789012`. Episodes must have public publisher audio.
 - Direct public HTTP(S) audio URLs, including redirects from podcast hosts.
 
 Pocket Casts [does not offer a public API](https://support.pocketcasts.com/knowledge-base/pocket-casts-api/). This app uses a currently available episode lookup to resolve a Pocket Casts page to its original audio URL. If Pocket Casts changes that lookup or an older episode is not returned, use the direct audio URL instead. Private feeds and arbitrary podcast page sites are not supported yet.

@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from itertools import zip_longest
 from threading import Lock
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -19,7 +19,7 @@ import uvicorn
 import pykakasi
 
 from .pipeline import TranscriptionWorker
-from .source import POCKET_PATH
+from .source import APPLE_HOSTS, APPLE_SHOW_ID, POCKET_PATH
 from .store import EpisodeStore
 from .translation import ensure_chatgpt_login
 
@@ -54,6 +54,12 @@ def _check_submission_url(url: str) -> str:
 
 def _source_id(url: str) -> str | None:
     parsed = urlsplit(url)
+    if parsed.hostname and parsed.hostname.lower() in APPLE_HOSTS:
+        show_match = APPLE_SHOW_ID.search(parsed.path)
+        episode_ids = parse_qs(parsed.query).get("i", [])
+        if show_match and len(episode_ids) == 1 and episode_ids[0].isdigit():
+            return f"apple:{show_match.group(1)}:{episode_ids[0]}"
+        return None
     if parsed.hostname not in {"pocketcasts.com", "www.pocketcasts.com"}:
         return None
     match = POCKET_PATH.fullmatch(parsed.path)

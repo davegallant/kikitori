@@ -33,6 +33,19 @@ def test_submitting_a_url_queues_once_and_redirects_duplicate(tmp_path):
     assert len(worker.submitted) == 1
 
 
+def test_equivalent_apple_podcasts_episode_links_redirect_to_existing_episode(tmp_path):
+    worker = RecordingWorker()
+    urls = [
+        "https://podcasts.apple.com/ca/podcast/show/id123456?i=987654",
+        "https://podcasts.apple.com/us/podcast/another-show-name/id123456?i=987654",
+    ]
+    with TestClient(create_app(tmp_path, worker)) as client:
+        first = client.post("/episodes", data={"url": urls[0]}, follow_redirects=False)
+        second = client.post("/episodes", data={"url": urls[1]}, follow_redirects=False)
+    assert second.headers["location"] == first.headers["location"]
+    assert len(worker.submitted) == 1
+
+
 def test_library_search_finds_saved_transcript_text(tmp_path):
     store = EpisodeStore(tmp_path)
     episode = store.create("https://example.com/episode.mp3")

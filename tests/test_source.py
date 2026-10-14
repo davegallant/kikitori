@@ -15,6 +15,7 @@ POCKET_URL = (
     "eeb75a75-9d06-4f09-9d81-14733bd76cef"
 )
 AUDIO_URL = "https://anchor.fm/episode.m4a"
+APPLE_URL = "https://podcasts.apple.com/ca/podcast/apple-events/id1473854035?i=1000788729530"
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +23,8 @@ def public_dns(monkeypatch):
     original = socket.getaddrinfo
 
     def fake(host, port, *args, **kwargs):
-        if host in {"pocketcasts.com", "podcast-api.pocketcasts.com", "anchor.fm", "example.com"}:
+        if host in {"pocketcasts.com", "podcast-api.pocketcasts.com", "anchor.fm", "example.com",
+                    "podcasts.apple.com", "itunes.apple.com"}:
             return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.215.14", port))]
         return original(host, port, *args, **kwargs)
 
@@ -61,6 +63,34 @@ def test_missing_pocketcasts_episode_reports_error():
     client = client_for(lambda request: httpx.Response(200, json={"podcast": {"episodes": []}}))
     with pytest.raises(SourceError, match="episode"):
         resolve_source(POCKET_URL, client)
+
+
+def test_apple_podcasts_episode_resolves_publisher_audio_and_title():
+    def handler(request):
+        assert request.url.host == "itunes.apple.com"
+        assert request.url.path == "/lookup"
+        assert request.url.params["id"] == "1473854035"
+        assert request.url.params["entity"] == "podcastEpisode"
+        assert request.url.params["country"] == "ca"
+        return httpx.Response(200, json={"resultCount": 2, "results": [
+            {"wrapperType": "track", "kind": "podcast", "trackId": 1473854035,
+             "trackName": "Apple Events", "feedUrl": "https://feeds.example.com/apple.xml"},
+            {"episodeUrl": AUDIO_URL,
+             "trackViewUrl": "https://podcasts.apple.com/ca/podcast/apple-event/id1473854035?i=1000788729530",
+             "trackName": "Apple Event September 9", "collectionId": 1473854035},
+        ]})
+
+    source = resolve_source(APPLE_URL, client_for(handler))
+    assert source.source_url == APPLE_URL
+    assert source.audio_url == AUDIO_URL
+    assert source.title == "Apple Event September 9"
+    assert source.source_id == "apple:1473854035:1000788729530"
+
+
+def test_apple_podcasts_show_link_without_episode_id_is_rejected():
+    client = client_for(lambda request: pytest.fail("show-only links need no lookup"))
+    with pytest.raises(SourceError, match="episode"):
+        resolve_source("https://podcasts.apple.com/us/podcast/apple-events/id1473854035", client)
 
 
 def test_direct_audio_url_is_accepted():
