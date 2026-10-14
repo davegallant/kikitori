@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ episode.title }} · Kikitori{% endblock %}
+{% block content %}
+  <nav class="back-nav"><a href="/">← Back to library</a></nav>
+  <section class="episode-heading">
+    <p class="eyebrow">EPISODE · {{ episode.created_at[:10] }}</p>
+    <h1>{{ episode.title }}</h1>
+    <div class="episode-actions">
+      {% if 'pocketcasts.com' in episode.source_url %}
+        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open in Pocket Casts ↗</a>
+      {% else %}
+        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open source ↗</a>
+      {% endif %}
+      {% if episode.stage == 'complete' %}
+        <a href="/episodes/{{ episode.id }}/transcript/ja">Download Japanese</a>
+        <a href="/episodes/{{ episode.id }}/transcript/en">Download English</a>
+        {% if episode.ja_json_filename %}
+          <form action="/episodes/{{ episode.id }}/retranslate" method="post"><button class="action-button" type="submit">Rebuild English translation</button></form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </section>
+
+  {% if episode.audio_filename %}
+    <section class="player-panel" aria-label="Episode audio">
+      <span class="player-label">AUDIO</span>
+      <span class="player-title">{{ episode.title }}</span>
+      <audio id="episode-audio" controls preload="metadata" src="/episodes/{{ episode.id }}/audio"></audio>
+    </section>
+  {% endif %}
+
+  {% if episode.stage == 'failed' %}
+    <div class="notice error" role="alert">
+      <div><strong>Processing failed</strong><p>{{ episode.error }}</p>
+        <form action="/episodes/{{ episode.id }}/retry" method="post"><button class="retry-button" type="submit">Retry episode</button></form>
+      </div>
+    </div>
+  {% elif episode.stage != 'complete' %}
+    <div class="notice progress" id="job-status" data-status-url="/episodes/{{ episode.id }}/status" role="status">
+      <span class="pulse" aria-hidden="true"></span>
+      <div><strong>Processing episode</strong><p>Current step: <span id="stage-label">{{ episode.stage|capitalize }}</span>. You can leave this page and come back later.</p></div>
+    </div>
+  {% else %}
+    {% if not episode.translation_method %}
+      <p class="translation-note">This episode uses an older English translation that may not line up. Rebuild English translation to align it with each Japanese passage.</p>
+    {% endif %}
+    <section class="transcript-column" aria-label="Japanese transcript with English translation">
+      <input class="sr-only" id="furigana-toggle" type="checkbox" checked aria-controls="transcript-pairs">
+      <div class="transcript-head"><div><p class="eyebrow">JAPANESE · ENGLISH</p><h2>Transcript</h2></div><div class="transcript-options"><label class="furigana-toggle" for="furigana-toggle">Furigana</label><span>{{ japanese|length }} passages</span></div></div>
+      <p class="furigana-note">Readings are automatic and may be imperfect.</p>
+      <div class="transcript-pairs" id="transcript-pairs">
+        {% for ja, en in transcript_pairs %}
+          <div class="transcript-pair">
+            {% set segment = ja or en %}
+            <button class="timestamp" type="button" data-seconds="{{ segment.start }}" aria-label="Play from {{ segment.start|clock }}">{{ segment.start|clock }}</button>
+            <div class="transcript-texts">
+              {% if ja %}<p lang="ja">{% for part in ja.furigana_parts %}{% if part.reading %}<ruby>{{ part.text }}<rt>{{ part.reading }}</rt></ruby>{% else %}{{ part.text }}{% endif %}{% endfor %}</p>{% endif %}
+              {% if en %}<p class="translation">{{ en.text }}</p>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
