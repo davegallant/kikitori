@@ -85,6 +85,11 @@ def test_episode_page_has_source_link_player_and_transcripts(tmp_path):
         styles = client.get("/static/app.css")
     assert page.status_code == 200
     assert source_url in page.text
+    assert f'href="{source_url}"' in page.text
+    assert "Original URL ↗</a>" in page.text
+    assert f">{source_url}</a>" not in page.text
+    assert "Open in Pocket Casts" not in page.text
+    assert "EPISODE ·" not in page.text
     assert "Japanese companies" in page.text
     assert "furigana-toggle" in page.text
     assert "checked" in page.text

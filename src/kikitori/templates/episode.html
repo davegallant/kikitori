@@ -3,14 +3,9 @@
 {% block content %}
   <nav class="back-nav"><a href="/">← Back to library</a></nav>
   <section class="episode-heading">
-    <p class="eyebrow">EPISODE · {{ episode.created_at[:10] }}</p>
     <h1>{{ episode.title }}</h1>
     <div class="episode-actions">
-      {% if 'pocketcasts.com' in episode.source_url %}
-        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open in Pocket Casts ↗</a>
-      {% else %}
-        <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer">Open source ↗</a>
-      {% endif %}
+      <a href="{{ episode.source_url }}" target="_blank" rel="noopener noreferrer" title="{{ episode.source_url }}">Original URL ↗</a>
       {% if episode.stage == 'complete' %}
         <a href="/episodes/{{ episode.id }}/transcript/ja">Download Japanese</a>
         <a href="/episodes/{{ episode.id }}/transcript/en">Download English</a>

@@ -46,8 +46,9 @@ a { color: inherit; }
 .back-nav a { text-decoration: none; color: #4a7e67; font-weight: 700; font-size: 13px; }
 .back-nav a:hover { text-decoration: underline; }
 .episode-heading h1 { font-size: clamp(32px, 4.4vw, 54px); max-width: 900px; }
-.episode-actions { display: flex; gap: 18px; flex-wrap: wrap; margin: 25px 0 35px; }
-.episode-actions a { color: #276f56; text-decoration: none; font-size: 13px; font-weight: 700; }
+.episode-actions { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin: 25px 0 35px; }
+.episode-actions > form { margin: 0; }
+.episode-actions a { color: #276f56; text-decoration: none; font-size: 13px; font-weight: 700; line-height: 1.2; }
 .episode-actions a:hover { text-decoration: underline; }
 .player-panel { position: sticky; top: 0; z-index: 10; background: #173f34; color: #fff; border-radius: 15px; padding: 21px 24px; display: flex; align-items: center; gap: 26px; margin-bottom: 34px; }
 .player-panel.is-stuck { display: block; width: 100vw; margin-left: calc(50% - 50vw); border-radius: 0; padding: 20px max(14px, calc((100vw - 1100px) / 2)); }
@@ -99,6 +100,6 @@ a { color: inherit; }
   .local-badge { display: none; }
 }
 
-.action-button { border: 0; background: none; padding: 0; color: #276f56; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.action-button { border: 0; background: none; padding: 0; color: #276f56; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.2; cursor: pointer; }
 .action-button:hover { text-decoration: underline; }
 .translation-note { color: #65736e; font-size: 14px; line-height: 1.6; }
