@@ -25,10 +25,10 @@ dependencies = [
 test = ["pytest>=8,<10"]
 
 [project.scripts]
-kikitori = "podcast_transcriber.web:main"
+kikitori = "kikitori.web:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/podcast_transcriber"]
+packages = ["src/kikitori"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

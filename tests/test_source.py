@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from podcast_transcriber.source import SourceError, SourceInfo, download_audio, resolve_source, safe_http_client
+from kikitori.source import SourceError, SourceInfo, download_audio, resolve_source, safe_http_client
 
 
 POCKET_URL = (

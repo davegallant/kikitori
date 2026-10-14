@@ -4,8 +4,8 @@ from threading import Barrier, BrokenBarrierError
 
 from fastapi.testclient import TestClient
 
-from podcast_transcriber.store import EpisodeStore
-from podcast_transcriber.web import create_app
+from kikitori.store import EpisodeStore
+from kikitori.web import create_app
 
 
 class RecordingWorker:

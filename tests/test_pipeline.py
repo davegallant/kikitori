@@ -3,9 +3,9 @@ from pathlib import Path
 from types import SimpleNamespace
 import time
 
-from podcast_transcriber.pipeline import TranscriptionWorker
-from podcast_transcriber.source import SourceInfo
-from podcast_transcriber.store import EpisodeStore
+from kikitori.pipeline import TranscriptionWorker
+from kikitori.source import SourceInfo
+from kikitori.store import EpisodeStore
 
 
 class FakeModel:

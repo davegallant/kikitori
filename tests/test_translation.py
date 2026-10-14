@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from podcast_transcriber.translation import ChatGPTTranslator
+from kikitori.translation import ChatGPTTranslator
 
 
 def test_chatgpt_translator_uses_context_and_preserves_passage_order():

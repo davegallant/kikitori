@@ -1,6 +1,6 @@
 import json
 
-from podcast_transcriber.store import EpisodeStore
+from kikitori.store import EpisodeStore
 
 
 def test_episode_survives_fresh_store_instance(tmp_path):
