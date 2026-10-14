@@ -14,6 +14,10 @@ a { color: inherit; }
 .brand-mark { display: block; width: 31px; height: 31px; flex: none; }
 .local-badge { font-size: 10px; font-weight: 800; letter-spacing: .16em; color: #557c6d; border: 1px solid #d9e9df; padding: 7px 10px; border-radius: 5px; }
 .hero { padding: 76px 0 66px; border-bottom: 1px solid #e0e5dc; }
+.hero-cat { display: block; width: min(180px, 45vw); height: auto; margin: 0 auto 28px; }
+.hero .intro { margin-left: auto; margin-right: auto; text-align: center; }
+.hero .submit-form { margin: 0 auto; }
+.hero .submit-form > label { text-align: center; }
 .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .16em; color: #477a69; margin: 0 0 14px; }
 .hero h1, .episode-heading h1 { font-size: clamp(36px, 5vw, 61px); letter-spacing: -.06em; line-height: 1.08; max-width: 760px; margin: 0; }
 .intro { font-size: 17px; line-height: 1.6; color: #65736e; max-width: 680px; margin: 22px 0 36px; }

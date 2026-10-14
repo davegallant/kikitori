@@ -2,8 +2,7 @@
 {% block title %}Library · Kikitori{% endblock %}
 {% block content %}
   <section class="hero">
-    <p class="eyebrow">LISTEN · READ · FIND</p>
-    <h1>Your podcast listening library.</h1>
+    <img class="hero-cat" src="{{ url_for('static', path='/kikitori-cat.svg') }}" alt="Cat wearing headphones" width="180" height="180">
     <p class="intro">Paste a Pocket Casts or Apple Podcasts episode page, or a direct audio link. Japanese transcription and English translation run in the background.</p>
     <form class="submit-form" action="/episodes" method="post">
       <label for="episode-url">Episode URL</label>
