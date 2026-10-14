@@ -1,5 +1,9 @@
 # Kikitori
 
+<p align="center">
+  <img src="src/kikitori/static/kikitori-cat.svg" alt="Cute cat wearing headphones" width="320">
+</p>
+
 ![Kikitori episode page](docs/images/kikitori-episode.png)
 
 A local web library for Japanese podcast episodes. Paste a Pocket Casts episode page or a direct audio URL, then listen and read timestamped Japanese and English transcripts.
